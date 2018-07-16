@@ -5,7 +5,6 @@
 This project collects some utility scripts and assets I developed to be reused in Unity projects.
 
 **This is a work-in-progress.**
-See [WIP branch](https://github.com/gpvigano/GPVUDK/tree/WIP)
 
 ### Acknowledgements:
 The World Space UI Interaction (WSUI) and the GameObjectFollower script were inspired by [VRTK](https://github.com/thestonefox/VRTK).
