@@ -116,7 +116,7 @@ namespace GPVUDK
         public bool headingOnly = false;
         [Tooltip("The maximum allowed angle between the unsmoothed source and the smoothed target per frame to use for smoothing.")]
         public float maxAllowedPerFrameAngleDifference = 1.5f;
-        [Tooltip("Whether to activate the rotation when following `gameObjectToFollow`.")]
+        [Tooltip("Angel threshold in degrees to activate the rotation when following `gameObjectToFollow`.")]
         public float rotationThreshold = 0;
 
         [Tooltip("Whether to follow the scale of the given game object.")]
