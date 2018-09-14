@@ -7,178 +7,181 @@ using UnityEngine.VR;
 using UnityEditor;
 #endif
 
-public class InterfaceLayoutConfigurator : MonoBehaviour
+namespace GPVUDK
 {
-    public InterfaceLayout defaultInterfaceLayout;
-    public InterfaceLayout[] interfaceLayouts;
+    public class InterfaceLayoutConfigurator : MonoBehaviour
+    {
+        public InterfaceLayout defaultInterfaceLayout;
+        public InterfaceLayout[] interfaceLayouts;
 
-    [Header("Debug")]
-    [SerializeField]
-    string forceDevice = string.Empty;
+        [Header("Debug")]
+        [SerializeField]
+        string forceDevice = string.Empty;
 
 #if UNITY_EDITOR
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Default Interface Layout")]
-    static private void ApplyDefaultInterfaceLayout(MenuCommand menuCommand)
-    {
-        InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
-        ilConf.defaultInterfaceLayout.Apply();
-    }
-    // Validate the menu item defined by the function above.
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Default Interface Layout", true)]
-    static private bool ValidateApplyDefaultInterfaceLayout()
-    {
-        return DefaultInterfaceLayoutAvailable();
-    }
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Default Interface Layout")]
+        static private void ApplyDefaultInterfaceLayout(MenuCommand menuCommand)
+        {
+            InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
+            ilConf.defaultInterfaceLayout.Apply();
+        }
+        // Validate the menu item defined by the function above.
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Default Interface Layout", true)]
+        static private bool ValidateApplyDefaultInterfaceLayout()
+        {
+            return DefaultInterfaceLayoutAvailable();
+        }
 
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply First Interface Layout")]
-    static private void ApplyFirstInterfaceLayout(MenuCommand menuCommand)
-    {
-        InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
-        ilConf.interfaceLayouts[0].Apply();
-    }
-    // Validate the menu item defined by the function above.
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply First Interface Layout", true)]
-    static private bool ValidateApplyFirstInterfaceLayout()
-    {
-        return InterfaceLayoutAvailable();
-    }
-
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Last Interface Layout")]
-    static private void ApplyLastInterfaceLayout(MenuCommand menuCommand)
-    {
-        InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
-        ilConf.interfaceLayouts[ilConf.interfaceLayouts.Length - 1].Apply();
-    }
-    // Validate the menu item defined by the function above.
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Last Interface Layout", true)]
-    static private bool ValidateApplyLastInterfaceLayout()
-    {
-        return InterfaceLayoutAvailable();
-    }
-
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Duplicate Last Interface Layout")]
-    static private void DuplicateLastInterfaceLayout(MenuCommand menuCommand)
-    {
-        InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
-        List<InterfaceLayout> layoutList = new List<InterfaceLayout>();
-        layoutList.AddRange(ilConf.interfaceLayouts);
-        InterfaceLayout lastItem = ilConf.interfaceLayouts[ilConf.interfaceLayouts.Length - 1];
-        InterfaceLayout newItem = lastItem.Duplicate();
-        newItem.name += " (copy)";
-        layoutList.Add(newItem);
-        ilConf.interfaceLayouts = layoutList.ToArray();
-    }
-    // Validate the menu item defined by the function above.
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Duplicate Last Interface Layout", true)]
-    static private bool ValidateDuplicateLastInterfaceLayout()
-    {
-        return InterfaceLayoutAvailable();
-    }
-
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Update Default Interface Layout")]
-    static private void UpdateDefaultInterfaceLayout(MenuCommand menuCommand)
-    {
-        InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
-        ilConf.defaultInterfaceLayout.Store();
-    }
-    // Validate the menu item defined by the function above.
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Update Default Interface Layout", true)]
-    static private bool ValidateUpdateDefaultInterfaceLayout()
-    {
-        return DefaultInterfaceLayoutAvailable();
-    }
-
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Update Last Interface Layout")]
-    static private void UpdateLastInterfaceLayout(MenuCommand menuCommand)
-    {
-        InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
-        ilConf.interfaceLayouts[ilConf.interfaceLayouts.Length-1].Store();
-    }
-    // Validate the menu item defined by the function above.
-    [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Update Last Interface Layout", true)]
-    static private bool ValidateUpdateLastInterfaceLayout()
-    {
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply First Interface Layout")]
+        static private void ApplyFirstInterfaceLayout(MenuCommand menuCommand)
+        {
+            InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
+            ilConf.interfaceLayouts[0].Apply();
+        }
+        // Validate the menu item defined by the function above.
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply First Interface Layout", true)]
+        static private bool ValidateApplyFirstInterfaceLayout()
+        {
             return InterfaceLayoutAvailable();
-    }
+        }
 
-    static private bool DefaultInterfaceLayoutAvailable()
-    {
-        if (Selection.activeGameObject == null)
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Last Interface Layout")]
+        static private void ApplyLastInterfaceLayout(MenuCommand menuCommand)
         {
-            return false;
+            InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
+            ilConf.interfaceLayouts[ilConf.interfaceLayouts.Length - 1].Apply();
         }
-        InterfaceLayoutConfigurator ifConf = Selection.activeGameObject.GetComponent<InterfaceLayoutConfigurator>();
-        return ifConf != null && ifConf.defaultInterfaceLayout != null;
-    }
-    static private bool InterfaceLayoutAvailable()
-    {
-        if (Selection.activeGameObject == null)
+        // Validate the menu item defined by the function above.
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Last Interface Layout", true)]
+        static private bool ValidateApplyLastInterfaceLayout()
         {
-            return false;
+            return InterfaceLayoutAvailable();
         }
-        InterfaceLayoutConfigurator ifConf = Selection.activeGameObject.GetComponent<InterfaceLayoutConfigurator>();
-        return ifConf != null && ifConf.interfaceLayouts != null && ifConf.interfaceLayouts.Length > 0;
-    }
+
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Duplicate Last Interface Layout")]
+        static private void DuplicateLastInterfaceLayout(MenuCommand menuCommand)
+        {
+            InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
+            List<InterfaceLayout> layoutList = new List<InterfaceLayout>();
+            layoutList.AddRange(ilConf.interfaceLayouts);
+            InterfaceLayout lastItem = ilConf.interfaceLayouts[ilConf.interfaceLayouts.Length - 1];
+            InterfaceLayout newItem = lastItem.Duplicate();
+            newItem.name += " (copy)";
+            layoutList.Add(newItem);
+            ilConf.interfaceLayouts = layoutList.ToArray();
+        }
+        // Validate the menu item defined by the function above.
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Duplicate Last Interface Layout", true)]
+        static private bool ValidateDuplicateLastInterfaceLayout()
+        {
+            return InterfaceLayoutAvailable();
+        }
+
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Update Default Interface Layout")]
+        static private void UpdateDefaultInterfaceLayout(MenuCommand menuCommand)
+        {
+            InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
+            ilConf.defaultInterfaceLayout.Store();
+        }
+        // Validate the menu item defined by the function above.
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Update Default Interface Layout", true)]
+        static private bool ValidateUpdateDefaultInterfaceLayout()
+        {
+            return DefaultInterfaceLayoutAvailable();
+        }
+
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Update Last Interface Layout")]
+        static private void UpdateLastInterfaceLayout(MenuCommand menuCommand)
+        {
+            InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
+            ilConf.interfaceLayouts[ilConf.interfaceLayouts.Length-1].Store();
+        }
+        // Validate the menu item defined by the function above.
+        [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Update Last Interface Layout", true)]
+        static private bool ValidateUpdateLastInterfaceLayout()
+        {
+                return InterfaceLayoutAvailable();
+        }
+
+        static private bool DefaultInterfaceLayoutAvailable()
+        {
+            if (Selection.activeGameObject == null)
+            {
+                return false;
+            }
+            InterfaceLayoutConfigurator ifConf = Selection.activeGameObject.GetComponent<InterfaceLayoutConfigurator>();
+            return ifConf != null && ifConf.defaultInterfaceLayout != null;
+        }
+        static private bool InterfaceLayoutAvailable()
+        {
+            if (Selection.activeGameObject == null)
+            {
+                return false;
+            }
+            InterfaceLayoutConfigurator ifConf = Selection.activeGameObject.GetComponent<InterfaceLayoutConfigurator>();
+            return ifConf != null && ifConf.interfaceLayouts != null && ifConf.interfaceLayouts.Length > 0;
+        }
 #endif
 
-    private void Start()
-    {
-        string currDevice =  VRSettings.loadedDeviceName;
+        private void Start()
+        {
+            string currDevice =  VRSettings.loadedDeviceName;
 #if UNITY_EDITOR
-        if (!string.IsNullOrEmpty(forceDevice))
-        {
-            currDevice = forceDevice;
-        }
+            if (!string.IsNullOrEmpty(forceDevice))
+            {
+                currDevice = forceDevice;
+            }
 #endif
-        if (interfaceLayouts != null)
-        {
-            bool applied = false;
-            foreach (InterfaceLayout layout in interfaceLayouts)
+            if (interfaceLayouts != null)
             {
-                if (layout.name == currDevice)
+                bool applied = false;
+                foreach (InterfaceLayout layout in interfaceLayouts)
                 {
-                    layout.Apply();
-                    applied = true;
-                    break;
-                }
-            }
-            if (!applied)
-            {
-                defaultInterfaceLayout.Apply();
-            }
-        }
-    }
-
-   private void OnValidate()
-    {
-        if (defaultInterfaceLayout != null)
-        {
-            defaultInterfaceLayout.name = "default";
-            if ((interfaceLayouts == null || interfaceLayouts.Length == 0))
-            {
-                {
-                    if (defaultInterfaceLayout.canvasTransform != null)
+                    if (layout.name == currDevice)
                     {
-                        foreach (CanvasTransform layout in defaultInterfaceLayout.canvasTransform)
-                        {
-                            layout.Store();
-                        }
+                        layout.Apply();
+                        applied = true;
+                        break;
                     }
-                    // TODO :remove this after migration
+                }
+                if (!applied)
+                {
+                    defaultInterfaceLayout.Apply();
                 }
             }
-            foreach (CanvasTransform layout in defaultInterfaceLayout.canvasTransform)
-            {
-                layout.Validate();
-            }
         }
-        if ((interfaceLayouts != null || interfaceLayouts.Length > 0))
+
+       private void OnValidate()
         {
-            foreach (InterfaceLayout interfaceLayout in interfaceLayouts)
+            if (defaultInterfaceLayout != null)
             {
-                foreach (CanvasTransform layout in interfaceLayout.canvasTransform)
+                defaultInterfaceLayout.name = "default";
+                if ((interfaceLayouts == null || interfaceLayouts.Length == 0))
+                {
+                    {
+                        if (defaultInterfaceLayout.canvasTransform != null)
+                        {
+                            foreach (CanvasTransform layout in defaultInterfaceLayout.canvasTransform)
+                            {
+                                layout.Store();
+                            }
+                        }
+                        // TODO :remove this after migration
+                    }
+                }
+                foreach (CanvasTransform layout in defaultInterfaceLayout.canvasTransform)
                 {
                     layout.Validate();
+                }
+            }
+            if ((interfaceLayouts != null || interfaceLayouts.Length > 0))
+            {
+                foreach (InterfaceLayout interfaceLayout in interfaceLayouts)
+                {
+                    foreach (CanvasTransform layout in interfaceLayout.canvasTransform)
+                    {
+                        layout.Validate();
+                    }
                 }
             }
         }

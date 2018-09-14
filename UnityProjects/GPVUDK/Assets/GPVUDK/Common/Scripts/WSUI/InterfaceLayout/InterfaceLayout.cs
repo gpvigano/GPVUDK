@@ -2,50 +2,53 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[Serializable]
-public class InterfaceLayout
+namespace GPVUDK
 {
-    public string name;
-    public CanvasTransform[] canvasTransform;
-
-    public InterfaceLayout()
+    [Serializable]
+    public class InterfaceLayout
     {
-    }
+        public string name;
+        public CanvasTransform[] canvasTransform;
 
-    public void Apply()
-    {
-        if (canvasTransform != null)
+        public InterfaceLayout()
         {
-            foreach (CanvasTransform layout in canvasTransform)
+        }
+
+        public void Apply()
+        {
+            if (canvasTransform != null)
             {
-                layout.Apply();
+                foreach (CanvasTransform layout in canvasTransform)
+                {
+                    layout.Apply();
+                }
             }
         }
-    }
 
-    public void Store()
-    {
-        if (canvasTransform != null)
+        public void Store()
         {
-            foreach (CanvasTransform layout in canvasTransform)
+            if (canvasTransform != null)
             {
-                layout.Store();
+                foreach (CanvasTransform layout in canvasTransform)
+                {
+                    layout.Store();
+                }
             }
         }
-    }
 
-    public InterfaceLayout Duplicate()
-    {
-        InterfaceLayout newLayout = new InterfaceLayout();
-        newLayout.name = name;
-        newLayout.canvasTransform = (CanvasTransform[])canvasTransform.Clone();
-        return newLayout;
-    }
-    public void Validate()
-    {
-            foreach (CanvasTransform layout in canvasTransform)
-            {
-                layout.Validate();
-            }
+        public InterfaceLayout Duplicate()
+        {
+            InterfaceLayout newLayout = new InterfaceLayout();
+            newLayout.name = name;
+            newLayout.canvasTransform = (CanvasTransform[])canvasTransform.Clone();
+            return newLayout;
+        }
+        public void Validate()
+        {
+                foreach (CanvasTransform layout in canvasTransform)
+                {
+                    layout.Validate();
+                }
+        }
     }
 }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
- 
+
 namespace GPVUDK
 {
     public class AppQuitManager : MonoBehaviour
@@ -51,12 +51,15 @@ namespace GPVUDK
                 obj.SetActive(true);
             }
             quitTime = Time.realtimeSinceStartup;
-            if(audioSource!=null && quitSound!=null)
+            if (audioSource != null && quitSound != null)
             {
                 audioSource.clip = quitSound;
                 audioSource.Play();
             }
-            tapDetector.Tap += CancelQuit;
+            if (tapDetector != null)
+            {
+                tapDetector.Tap += CancelQuit;
+            }
         }
 
         public virtual void CancelQuit()
@@ -83,7 +86,10 @@ namespace GPVUDK
 
         public virtual void ConfirmQuit()
         {
-            tapDetector.Tap -= CancelQuit;
+            if (tapDetector != null)
+            {
+                tapDetector.Tap -= CancelQuit;
+            }
             QuitNow();
         }
 
@@ -94,7 +100,7 @@ namespace GPVUDK
 
         private void Update()
         {
-            if (quitTime>0)
+            if (quitTime > 0)
             {
                 float elapsedTime = Time.realtimeSinceStartup - quitTime;
                 if (progressImage != null)
