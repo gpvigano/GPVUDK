@@ -45,10 +45,10 @@ namespace GPVUDK
         }
         public void Validate()
         {
-                foreach (CanvasTransform layout in canvasTransform)
-                {
-                    layout.Validate();
-                }
+            foreach (CanvasTransform layout in canvasTransform)
+            {
+                layout.Validate();
+            }
         }
     }
 }

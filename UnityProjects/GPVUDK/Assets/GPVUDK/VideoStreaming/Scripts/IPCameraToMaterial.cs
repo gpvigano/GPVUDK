@@ -52,6 +52,7 @@ namespace GPVUDK
         [SerializeField]
         private float reconnectTimeout = 1f;
 
+        // Internal buffer
         private Byte[] jpegData;
 
         private Texture2D texture;
@@ -122,6 +123,9 @@ namespace GPVUDK
             StartCoroutine(GetVideoStream());
         }
 
+        /// <summary>
+        /// Fire ConnectionFailed event.
+        /// </summary>
         protected virtual void OnConnectionFailed()
         {
             if (ConnectionFailed != null)
@@ -130,6 +134,9 @@ namespace GPVUDK
             }
         }
 
+        /// <summary>
+        /// Fire ConnectionSucceeded event.
+        /// </summary>
         protected virtual void OnConnectionSucceeded()
         {
             if (ConnectionSucceeded != null)
@@ -138,6 +145,9 @@ namespace GPVUDK
             }
         }
 
+        /// <summary>
+        /// Fire ConnectionFailed event, wait and restart video streaming.
+        /// </summary>
         protected virtual IEnumerator OnStreamLost()
         {
             OnConnectionFailed();
@@ -150,6 +160,8 @@ namespace GPVUDK
 
         private IEnumerator GetFrames(Stream stream)
         {
+            // TODO: this method must be reviewed
+
 #if UNITY_WSA_10_0 && WINDOWS_UWP
 #else
             stream.ReadTimeout = (int)(readTimeout * 1000f);
@@ -182,11 +194,12 @@ namespace GPVUDK
                         bytesToRead = FindLength(stream);
                     }
 #if UNITY_WSA_10_0 && WINDOWS_UWP
-                    catch (IOException)
+                catch (IOException)
 #else
                     catch (WebException)
 #endif
                     {
+                        // Error handling is made in the "if (bytesToRead == -1)" block
                     }
                     catch (ObjectDisposedException)
                     {
@@ -210,6 +223,7 @@ namespace GPVUDK
                         elapsedTime += Time.realtimeSinceStartup - timeoutStartTime;
                         if (elapsedTime < giveUpTimeout)
                         {
+                            yield return new WaitForEndOfFrame();
                             continue;
                         }
                         else
@@ -220,17 +234,11 @@ namespace GPVUDK
                             yield break;
                         }
                     }
-//#if UNITY_WSA_10_0 && WINDOWS_UWP
-//                if (jpegData.Length != bytesToRead)
-//                {
-//                    jpegData = new byte[bytesToRead];
-//                }
-//#else
                     if (jpegData.Length < bytesToRead)
                     {
+                        // if the internal buffer is not enough double it
                         jpegData = new byte[bytesToRead * 2];
                     }
-//#endif
 
                     int leftToRead = bytesToRead;
 
@@ -244,20 +252,18 @@ namespace GPVUDK
 
                         }
 #if UNITY_WSA_10_0 && WINDOWS_UWP
-                        catch (IOException)
+                    catch (IOException)
 #else
                         catch (WebException)
 #endif
                         {
-                            //if(e.Message != "The operation has timed out.")
-                            //{
-                            //    throw e;
-                            //}
+                            // Probably the operation has timed out. Retry in the next iteration.
                         }
                         catch (ObjectDisposedException)
                         {
                             streamLost = true;
                         }
+
                         if (streamLost)
                         {
                             Debug.LogError("Stream lost.");
@@ -266,17 +272,18 @@ namespace GPVUDK
                         }
                         yield return null;
                     }
+
                     if (IsStreaming)
                     {
                         stream.ReadByte(); // CR after bytes
                         stream.ReadByte(); // LF after bytes
-                                        //Debug.Log(thisClassName + ": Frame read");
-//#if UNITY_WSA_10_0 && WINDOWS_UWP
-					texture.LoadImage(jpegData);
-//#else
-//                    MemoryStream ms = new MemoryStream(jpegData, 0, bytesToRead, false, true);
-//                    texture.LoadImage(ms.GetBuffer());
-//#endif
+                                           //Debug.Log(thisClassName + ": Frame read");
+                                           //#if UNITY_WSA_10_0 && WINDOWS_UWP
+                        texture.LoadImage(jpegData);
+                        //#else
+                        //                    MemoryStream ms = new MemoryStream(jpegData, 0, bytesToRead, false, true);
+                        //                    texture.LoadImage(ms.GetBuffer());
+                        //#endif
                         if (savedTexWidth != texture.width || savedTexHeight != texture.height)
                         {
                             savedTexWidth = texture.width;
@@ -285,13 +292,6 @@ namespace GPVUDK
                         }
                         frameGot = true;
                         OnConnectionSucceeded();
-                        //if (frame != null)
-                        //{
-                        //    frame.material.mainTexture = texture;
-                        //}
-                        //yield return null;
-                        //frame.material.color = Color.white;
-                        //yield return null;
                         firstFrame = false;
                     }
                 }
@@ -305,6 +305,10 @@ namespace GPVUDK
             }
         }
 
+        /// <summary>
+        /// Get the video stream in a coroutine.
+        /// </summary>
+        /// <returns></returns>
 #if UNITY_WSA_10_0 && WINDOWS_UWP
         private IEnumerator GetVideoStream()
         {
@@ -349,11 +353,7 @@ namespace GPVUDK
                 // get response
                 resp = req.GetResponse();
             }
-#if UNITY_WSA_10_0 && WINDOWS_UWP
-            catch (IOException e)
-#else
             catch (WebException e)
-#endif
             {
                 OnConnectionFailed();
                 Debug.LogErrorFormat("Failed to connect to IP camera: {0}", e);
@@ -370,6 +370,11 @@ namespace GPVUDK
         }
 #endif
 
+        /// <summary>
+        /// Read the message header.
+        /// </summary>
+        /// <param name="stream">Source stream</param>
+        /// <returns>Returns the whole header text</returns>
         private string ReadHeader(Stream stream)
         {
             int b = 0;
@@ -404,6 +409,13 @@ namespace GPVUDK
             return headerBuilder.ToString();
         }
 
+        /// <summary>
+        /// Extract a value from the header text.
+        /// </summary>
+        /// <param name="header">header text</param>
+        /// <param name="tag">tag to be read</param>
+        /// <param name="startIdx">index in the header text</param>
+        /// <returns>Returns the requested value or null if not found.</returns>
         private string ExtractHeaderValue(string header, string tag, int startIdx)
         {
             int tagLength = tag.Length;
@@ -422,6 +434,11 @@ namespace GPVUDK
             return valString;
         }
 
+        /// <summary>
+        /// Read the header to detect the number of bytes to read.
+        /// </summary>
+        /// <param name="stream">Source stream</param>
+        /// <returns>The number of bytes to read or -1 on error.</returns>
         private int FindLength(Stream stream)
         {
             int result = -1;
@@ -448,8 +465,9 @@ namespace GPVUDK
             return result;
         }
 
-        void AdjustImageSize()
+        private void AdjustImageSize()
         {
+            // Adjust the size of the frame output image.
             if (texture != null)
             {
                 Debug.LogFormat("Size: {0},{1}", texture.width, texture.height);
@@ -470,6 +488,7 @@ namespace GPVUDK
                 resizeFrameImage = false;
             }
         }
+
 
         private void OnRectTransformDimensionsChange()
         {

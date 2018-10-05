@@ -4,6 +4,10 @@ using UnityEngine;
 
 namespace GPVUDK
 {
+    /// <summary>
+    /// Play a scanning animation on the EnvironmentScanning shader.
+    /// To be used during space scanning with HoloLens.
+    /// </summary>
     public class ScanningAnimationController : MonoBehaviour
     {
         public Material scanningMaterial;

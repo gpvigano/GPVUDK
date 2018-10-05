@@ -1,4 +1,8 @@
 ﻿using UnityEngine;
+
+/// <summary>
+/// Detect air taps and route them to OnTap method of GestureDetector, this is active only in WSA.
+/// </summary>
 #if UNITY_WSA_10_0
 #if UNITY_2017_2_OR_NEWER
 using UnityEngine.XR.WSA.Input;

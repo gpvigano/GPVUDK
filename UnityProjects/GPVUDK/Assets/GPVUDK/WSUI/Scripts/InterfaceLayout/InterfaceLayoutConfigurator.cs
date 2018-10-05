@@ -16,7 +16,7 @@ namespace GPVUDK
 
         [Header("Debug")]
         [SerializeField]
-        string forceDevice = string.Empty;
+        private string forceDevice = string.Empty;
 
 #if UNITY_EDITOR
         [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Default Interface Layout")]
@@ -25,6 +25,7 @@ namespace GPVUDK
             InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
             ilConf.defaultInterfaceLayout.Apply();
         }
+
         // Validate the menu item defined by the function above.
         [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Default Interface Layout", true)]
         static private bool ValidateApplyDefaultInterfaceLayout()
@@ -38,6 +39,7 @@ namespace GPVUDK
             InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
             ilConf.interfaceLayouts[0].Apply();
         }
+
         // Validate the menu item defined by the function above.
         [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply First Interface Layout", true)]
         static private bool ValidateApplyFirstInterfaceLayout()
@@ -51,6 +53,7 @@ namespace GPVUDK
             InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
             ilConf.interfaceLayouts[ilConf.interfaceLayouts.Length - 1].Apply();
         }
+
         // Validate the menu item defined by the function above.
         [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Last Interface Layout", true)]
         static private bool ValidateApplyLastInterfaceLayout()
@@ -70,6 +73,7 @@ namespace GPVUDK
             layoutList.Add(newItem);
             ilConf.interfaceLayouts = layoutList.ToArray();
         }
+
         // Validate the menu item defined by the function above.
         [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Duplicate Last Interface Layout", true)]
         static private bool ValidateDuplicateLastInterfaceLayout()
@@ -83,6 +87,7 @@ namespace GPVUDK
             InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
             ilConf.defaultInterfaceLayout.Store();
         }
+
         // Validate the menu item defined by the function above.
         [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Update Default Interface Layout", true)]
         static private bool ValidateUpdateDefaultInterfaceLayout()
@@ -94,13 +99,14 @@ namespace GPVUDK
         static private void UpdateLastInterfaceLayout(MenuCommand menuCommand)
         {
             InterfaceLayoutConfigurator ilConf = menuCommand.context as InterfaceLayoutConfigurator;
-            ilConf.interfaceLayouts[ilConf.interfaceLayouts.Length-1].Store();
+            ilConf.interfaceLayouts[ilConf.interfaceLayouts.Length - 1].Store();
         }
+
         // Validate the menu item defined by the function above.
         [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Update Last Interface Layout", true)]
         static private bool ValidateUpdateLastInterfaceLayout()
         {
-                return InterfaceLayoutAvailable();
+            return InterfaceLayoutAvailable();
         }
 
         static private bool DefaultInterfaceLayoutAvailable()
@@ -112,6 +118,7 @@ namespace GPVUDK
             InterfaceLayoutConfigurator ifConf = Selection.activeGameObject.GetComponent<InterfaceLayoutConfigurator>();
             return ifConf != null && ifConf.defaultInterfaceLayout != null;
         }
+
         static private bool InterfaceLayoutAvailable()
         {
             if (Selection.activeGameObject == null)
@@ -123,9 +130,12 @@ namespace GPVUDK
         }
 #endif
 
+        /// <summary>
+        /// Apply the current layout on startup.
+        /// </summary>
         private void Start()
         {
-            string currDevice =  VRSettings.loadedDeviceName;
+            string currDevice = VRSettings.loadedDeviceName;
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(forceDevice))
             {
@@ -151,7 +161,10 @@ namespace GPVUDK
             }
         }
 
-       private void OnValidate()
+        /// <summary>
+        /// Check and fix values in Unity Inspector.
+        /// </summary>
+        private void OnValidate()
         {
             if (defaultInterfaceLayout != null)
             {

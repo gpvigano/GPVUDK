@@ -19,13 +19,13 @@ namespace GPVUDK
         protected BoxCollider canvasBoxCollider;
         protected Rigidbody canvasRigidBody;
         protected Coroutine draggablePanelCreation;
-        protected const string CANVAS_DRAGGABLE_PANEL = "VRTK_UICANVAS_DRAGGABLE_PANEL";
-        protected const string ACTIVATOR_FRONT_TRIGGER_GAMEOBJECT = "VRTK_UICANVAS_ACTIVATOR_FRONT_TRIGGER";
+        protected const string CANVAS_DRAGGABLE_PANEL = "GPVUDK_UICANVAS_DRAGGABLE_PANEL";
+        protected const string ACTIVATOR_FRONT_TRIGGER_GAMEOBJECT = "GPVUDK_UICANVAS_ACTIVATOR_FRONT_TRIGGER";
         [Tooltip("Build colliders for UI elements, suitable for sparse elements with no background.")]
         [SerializeField]
         private bool buildColliders = false;
         [SerializeField]
-        [Tooltip("Set this offset for built colliders (positive=front, negative=back).")]
+        [Tooltip("Set this offset for built colliders (positive=front/over the canvas, negative=back).")]
         private float collidersOffset = 0;
 
         protected virtual void OnEnable()
@@ -43,6 +43,10 @@ namespace GPVUDK
             RemoveCanvas();
         }
 
+        /// <summary>
+        /// Build box colliders for each element of the UI in the given canvas.
+        /// </summary>
+        /// <param name="canvas">Canvas to be processed.</param>
         protected virtual void BuildColliders(Canvas canvas)
         {
             Graphic[] uiGraphics = canvas.gameObject.GetComponentsInChildren<Graphic>();
@@ -68,7 +72,7 @@ namespace GPVUDK
 
             if (!canvas || canvas.renderMode != RenderMode.WorldSpace)
             {
-                Debug.LogError("A VRTK_UICanvas requires to be placed on a Canvas that is set to `Render Mode = World Space`.");
+                Debug.LogError("A UIWorldCanvas requires to be placed on a Canvas that is set to `Render Mode = World Space`.");
                 return;
             }
 

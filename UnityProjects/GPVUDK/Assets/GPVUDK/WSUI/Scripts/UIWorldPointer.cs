@@ -38,19 +38,6 @@ namespace GPVUDK
     public class UIWorldPointer : MonoBehaviour
     {
         /// <summary>
-        /// Methods of activation.
-        /// </summary>
-        /// <param name="HoldButton">Only activates the UI Pointer when the Pointer button on the controller is pressed and held down.</param>
-        /// <param name="ToggleButton">Activates the UI Pointer on the first click of the Pointer button on the controller and it stays active until the Pointer button is clicked again.</param>
-        /// <param name="AlwaysOn">The UI Pointer is always active regardless of whether the Pointer button on the controller is pressed or not.</param>
-        //public enum ActivationMethods
-        //{
-        //    HoldButton,
-        //    ToggleButton,
-        //    AlwaysOn
-        //}
-
-        /// <summary>
         /// Methods of when to consider a UI Click action
         /// </summary>
         /// <param name="ClickOnButtonUp">Consider a UI Click action has happened when the UI Click alias button is released.</param>
@@ -121,7 +108,6 @@ namespace GPVUDK
         public event UIPointerEventHandler UIPointerElementDragEnd;
 
         protected bool pointerClicked = false;
-        protected bool beamEnabledState = false;
         protected bool lastPointerPressState = false;
         protected bool lastPointerClickState = false;
         protected GameObject currentTarget;
@@ -241,7 +227,7 @@ namespace GPVUDK
         }
 
         /// <summary>
-        /// The RemoveEventSystem resets the Unity EventSystem back to the original state before the VRTK_VRInputModule was swapped for it.
+        /// The RemoveEventSystem resets the Unity EventSystem back to the original state before the GPVUDK_VRInputModule was swapped for it.
         /// </summary>
         public virtual void RemoveEventSystem()
         {
@@ -268,7 +254,6 @@ namespace GPVUDK
             }
 
             return false;
-            //return (controller != null ? controller.IsButtonPressed(selectionButton) : false);
         }
 
         /// <summary>
@@ -305,13 +290,10 @@ namespace GPVUDK
 
         protected virtual void OnEnable()
         {
-            //pointerOriginTransform = (pointerOriginTransform == null ? VRTK_SDK_Bridge.GenerateControllerPointerOrigin(gameObject) : pointerOriginTransform);
-
             ConfigureEventSystem();
             pointerClicked = false;
             lastPointerPressState = false;
             lastPointerClickState = false;
-            beamEnabledState = false;
         }
 
         protected virtual void OnDisable()

@@ -4,20 +4,28 @@ using UnityEngine;
 
 namespace GPVUDK
 {
+    /// <summary>
+    /// Switch a group of objects on or off.
+    /// </summary>
     public class GroupSwitch : MonoBehaviour
     {
+        [Tooltip("The initial state: on (checked) or off")]
         public bool initiallyOn = true;
+        [Tooltip("List of objects to be switched together")]
         public GameObject[] switchedObjects;
 
         private bool isOn = false;
         private Dictionary<GameObject, bool> savedStates = new Dictionary<GameObject, bool>();
         private bool isOnInitialized = false;
 
+        /// <summary>
+        /// The group of object is on (not necessarily every object).
+        /// </summary>
         public bool IsOn
         {
             get
             {
-                return isOnInitialized?isOn:initiallyOn;
+                return isOnInitialized ? isOn : initiallyOn;
             }
 
             set
@@ -26,18 +34,22 @@ namespace GPVUDK
             }
         }
 
+        /// <summary>
+        /// Switch the group of object defined by the list on or off.
+        /// </summary>
+        /// <param name="on">Switch on (true) or off (false).</param>
         public void Switch(bool on)
         {
-            if(isOnInitialized&&(switchedObjects==null || isOn==on))
+            if (isOnInitialized && (switchedObjects == null || isOn == on))
             {
                 return;
             }
-            if(!isOnInitialized)
+            if (!isOnInitialized)
             {
                 SaveObjectStates();
             }
             isOn = on;
-            if(on)
+            if (on)
             {
                 foreach (GameObject obj in switchedObjects)
                 {
@@ -57,16 +69,16 @@ namespace GPVUDK
 
         private void SaveObjectStates()
         {
-                savedStates.Clear();
-                foreach (GameObject obj in switchedObjects)
-                {
-                    savedStates.Add(obj, obj.activeSelf);
-                }
+            savedStates.Clear();
+            foreach (GameObject obj in switchedObjects)
+            {
+                savedStates.Add(obj, obj.activeSelf);
+            }
         }
 
         private void Awake()
         {
-            isOn = initiallyOn;           
+            isOn = initiallyOn;
         }
 
         private void Start()

@@ -92,7 +92,7 @@ namespace GPVUDK
         {
             foreach (Renderer mr in targetObject.GetComponentsInChildren<Renderer>(true))
             {
-                ChangeColor(mr.material,newColor);
+                ChangeColor(mr.material, newColor);
             }
         }
 
@@ -103,15 +103,15 @@ namespace GPVUDK
         /// <param name="newColor">Color to set for each material</param>
         public static void ChangeColor(Material targetMaterial, Color newColor)
         {
-                targetMaterial.color = newColor;
-                if (targetMaterial.HasProperty("_Color"))
-                {
-                    targetMaterial.SetColor("_Color", newColor);
-                }
-                if (targetMaterial.HasProperty("_EmissionColor"))
-                {
-                    targetMaterial.SetColor("_EmissionColor", newColor);
-                }
+            targetMaterial.color = newColor;
+            if (targetMaterial.HasProperty("_Color"))
+            {
+                targetMaterial.SetColor("_Color", newColor);
+            }
+            if (targetMaterial.HasProperty("_EmissionColor"))
+            {
+                targetMaterial.SetColor("_EmissionColor", newColor);
+            }
         }
 
         /// <summary>
@@ -163,8 +163,8 @@ namespace GPVUDK
             Rigidbody rigidBody = movedObject.GetComponent<Rigidbody>();
             if (rigidBody)
             {
-                float t = Mathf.Max(Time.smoothDeltaTime,Time.deltaTime);
-                Vector3 shift = targetPos-rigidBody.position;
+                float t = Mathf.Max(Time.smoothDeltaTime, Time.deltaTime);
+                Vector3 shift = targetPos - rigidBody.position;
                 Vector3 velocity = shift / t;
                 Vector3 acceleration = velocity;
                 rigidBody.velocity = Vector3.zero;
@@ -172,9 +172,15 @@ namespace GPVUDK
                 Vector3 gForce = rigidBody.mass * Physics.gravity;// Vector3.down * 9.81f;
 
                 // limit accelerations for a better stability
-                if (maxG>0 && force.magnitude>gForce.magnitude* maxG) force = force.normalized * gForce.magnitude * maxG;
+                if (maxG > 0 && force.magnitude > gForce.magnitude * maxG)
+                {
+                    force = force.normalized * gForce.magnitude * maxG;
+                }
                 // compensate gravity
-                if (rigidBody.useGravity) force -= gForce;
+                if (rigidBody.useGravity)
+                {
+                    force -= gForce;
+                }
                 rigidBody.AddForce(force);
 
                 if (targetRot != null)

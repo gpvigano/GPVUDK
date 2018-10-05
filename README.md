@@ -14,9 +14,13 @@ The gaze cursor was inspired by [MRTK](https://github.com/Microsoft/MixedReality
 Sound effects are from [Freesound.org](https://freesound.org/).
 
 DieselSmoke particle effect is derived from [this tutorial](http://www.xenosmashgames.com/creating-smoke-with-shuriken-particle-system-in-unity3d/).
+
+VideoStreaming IP Camera code is inspired by [this answer](https://answers.unity.com/questions/1151512/show-video-from-ip-camera-source.html).
+
+
 ### Contributing
 
-Contributions from you would be welcome, but please notice that **this is still a work-in-progress**)!
+Contributions from you would be welcome, but please notice that **this is still a work-in-progress**!
 
 ### License
 

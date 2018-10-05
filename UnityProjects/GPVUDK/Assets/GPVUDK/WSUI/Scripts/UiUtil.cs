@@ -6,8 +6,16 @@ using UnityEngine.EventSystems;
 
 namespace GPVUDK
 {
-    public class UiUtil
+    /// <summary>
+    /// Collection of utility methods for UI.
+    /// </summary>
+    public static class UiUtil
     {
+        /// <summary>
+        /// Call OnPointerClick on the given object.
+        /// </summary>
+        /// <param name="uiObject">Object to be clicked</param>
+        /// <returns>Returns true if the object was clicked, false if not found or not clickable.</returns>
         public static bool Click(GameObject uiObject)
         {
             if (uiObject != null)
@@ -27,6 +35,11 @@ namespace GPVUDK
             return false;
         }
 
+        /// <summary>
+        /// Call OnSubmit on the given object.
+        /// </summary>
+        /// <param name="uiObject">Target object</param>
+        /// <returns>Returns true on success, false if no suitable component was found.</returns>
         public static bool Submit(GameObject uiObject)
         {
             if (uiObject != null)
@@ -46,6 +59,11 @@ namespace GPVUDK
             return false;
         }
 
+        /// <summary>
+        /// Call OnPointerDown on the given object.
+        /// </summary>
+        /// <param name="uiObject">Target object</param>
+        /// <returns>Returns true on success, false if no suitable component was found.</returns>
         public static bool PointerDown(GameObject uiObject)
         {
             if (uiObject != null)
@@ -65,6 +83,11 @@ namespace GPVUDK
             return false;
         }
 
+        /// <summary>
+        /// Call OnDrag on the given object.
+        /// </summary>
+        /// <param name="uiObject">Target object</param>
+        /// <returns>Returns true on success, false if no suitable component was found.</returns>
         public static bool PointerDrag(GameObject uiObject)
         {
             if (uiObject != null)
@@ -84,6 +107,11 @@ namespace GPVUDK
             return false;
         }
 
+        /// <summary>
+        /// Call OnPointerUp on the given object.
+        /// </summary>
+        /// <param name="uiObject">Target object</param>
+        /// <returns>Returns true on success, false if no suitable component was found.</returns>
         public static bool PointerUp(GameObject uiObject)
         {
             if (uiObject != null)
@@ -102,6 +130,5 @@ namespace GPVUDK
             }
             return false;
         }
-
     }
 }
