@@ -14,11 +14,11 @@ namespace GPVUDK
         public InterfaceLayout defaultInterfaceLayout;
         public InterfaceLayout[] interfaceLayouts;
 
+#if UNITY_EDITOR
         [Header("Debug")]
         [SerializeField]
         private string forceDevice = string.Empty;
 
-#if UNITY_EDITOR
         [MenuItem("CONTEXT/InterfaceLayoutConfigurator/Apply Default Interface Layout")]
         static private void ApplyDefaultInterfaceLayout(MenuCommand menuCommand)
         {

@@ -1,12 +1,12 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-namespace GPVUDK
+namespace GPVUDK.Video
 {
     /// <summary>
     /// User interface manager for connecting to an IP camera.
     /// </summary>
-    public class IPCameraUiManager : MonoBehaviour
+    public class IPCameraUI : MonoBehaviour
     {
         [Tooltip("Input field for the IP camera URL (MJPEG video, not the HTTP page)")]
         [SerializeField]
@@ -17,6 +17,12 @@ namespace GPVUDK
         [Tooltip("Input field for an optional password, if required to access the IP camera")]
         [SerializeField]
         protected InputField passwordInputField;
+        [Tooltip("Button for starting the video streaming")]
+        [SerializeField]
+        protected Button startButton;
+        [Tooltip("Button for stopping the video streaming")]
+        [SerializeField]
+        protected Button stopButton;
         [Tooltip("Script that controls the IP camera rendering")]
         [SerializeField]
         protected IPCameraToMaterial iPCameraToMaterial;
@@ -33,7 +39,9 @@ namespace GPVUDK
         [SerializeField]
         private bool autoStartStreaming = false;
 
-        /// <summary>
+        protected Color connectionDefaultColor = Color.black;
+
+       /// <summary>
         /// IP camera video streming settings.
         /// </summary>
         public virtual VideoStreamingSettings VideoStreamSettings
@@ -87,11 +95,7 @@ namespace GPVUDK
         /// </summary>
         public virtual void StopVideo()
         {
-            iPCameraToMaterial.StopStream();
-            if (urlInputField != null)
-            {
-                urlInputField.textComponent.color = Color.black;
-            }
+            iPCameraToMaterial.Stop();
         }
 
         /// <summary>
@@ -99,11 +103,7 @@ namespace GPVUDK
         /// </summary>
         public virtual void StartVideo()
         {
-            iPCameraToMaterial.StartStream();
-            if (urlInputField != null && iPCameraToMaterial.IsStreaming)
-            {
-                urlInputField.textComponent.color = connectionSucceededColor;
-            }
+            iPCameraToMaterial.Play();
         }
 
         /// <summary>
@@ -114,15 +114,15 @@ namespace GPVUDK
         {
             if (urlInputField != null)
             {
-                urlInputField.text = VideoStreamSettings.videoUrl;
+                urlInputField.text = videoStreamSettings.videoUrl;
             }
             if (loginInputField != null)
             {
-                loginInputField.text = VideoStreamSettings.login;
+                loginInputField.text = videoStreamSettings.login;
             }
             if (passwordInputField != null)
             {
-                passwordInputField.text = VideoStreamSettings.password;
+                passwordInputField.text = videoStreamSettings.password;
             }
         }
 
@@ -135,6 +135,14 @@ namespace GPVUDK
             {
                 urlInputField.textComponent.color = connectionSucceededColor;
             }
+            if (startButton != null)
+            {
+                startButton.interactable = false;
+            }
+            if (stopButton != null)
+            {
+                stopButton.interactable = true;
+            }
         }
 
         /// <summary>
@@ -146,6 +154,31 @@ namespace GPVUDK
             {
                 urlInputField.textComponent.color = connectionFailedColor;
             }
+            if (startButton != null)
+            {
+                startButton.interactable = true;
+            }
+            if (stopButton != null)
+            {
+                stopButton.interactable = false;
+            }
+        }
+
+
+        private void IPCameraToMaterial_ConnectionClosed()
+        {
+            if (urlInputField != null)
+            {
+                urlInputField.textComponent.color = connectionDefaultColor;
+            }
+            if (startButton != null)
+            {
+                startButton.interactable = true;
+            }
+            if (stopButton != null)
+            {
+                stopButton.interactable = false;
+            }
         }
 
         /// <summary>
@@ -156,20 +189,47 @@ namespace GPVUDK
             string url = VideoStreamSettings.videoUrl;
             string login = VideoStreamSettings.login;
             string password = VideoStreamSettings.password;
-            iPCameraToMaterial.SetUrl(url, login, password);
+            if (string.IsNullOrEmpty(url))
+            {
+                url = iPCameraToMaterial.Url;
+                login = iPCameraToMaterial.Login;
+                password = iPCameraToMaterial.Password;
+            }
+            else
+            {
+                iPCameraToMaterial.SetUrl(url, login, password);
+            }
         }
 
+        /// <summary>
+        /// Initialize default settings
+        /// </summary>
+        protected virtual void Awake()
+        {
+            if (urlInputField != null)
+            {
+                connectionDefaultColor = urlInputField.textComponent.color;
+            }
+            if (startButton != null)
+            {
+                startButton.interactable = true;
+            }
+            if (stopButton != null)
+            {
+                stopButton.interactable = false;
+            }
+            UpdateUI(defaultSettings);
+        }
 
         /// <summary>
         /// Initialize the user interface and start video streaming if autoStartStreaming is true.
         /// </summary>
         protected virtual void Start()
         {
-            UpdateUI(VideoStreamSettings);
-
-            if(autoStartStreaming)
+            if (autoStartStreaming)
             {
                 UpdateVideoStreamSettings();
+                SetUrl();
                 StartVideo();
             }
         }
@@ -186,20 +246,13 @@ namespace GPVUDK
         }
 
         /// <summary>
-        /// Initialize default settings
-        /// </summary>
-        protected virtual void Awake()
-        {
-            defaultSettings = VideoStreamSettings;
-        }
-
-        /// <summary>
         /// Register to IP camera events.
         /// </summary>
         protected virtual void OnEnable()
         {
             iPCameraToMaterial.ConnectionFailed += OnConnectionFailed;
             iPCameraToMaterial.ConnectionSucceeded += OnConnectionSucceeded;
+            iPCameraToMaterial.ConnectionClosed += IPCameraToMaterial_ConnectionClosed;
         }
 
         /// <summary>
@@ -209,6 +262,7 @@ namespace GPVUDK
         {
             iPCameraToMaterial.ConnectionFailed -= OnConnectionFailed;
             iPCameraToMaterial.ConnectionSucceeded -= OnConnectionSucceeded;
+            iPCameraToMaterial.ConnectionClosed -= IPCameraToMaterial_ConnectionClosed;
         }
 
         protected virtual void Update()

@@ -14,20 +14,13 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 
-namespace GPVUDK
+namespace GPVUDK.Video
 {
     /// <summary>
     /// Acquire images from a video stream coming from a remote IP camera
     /// </summary>
-    public class IPCameraToMaterial : MonoBehaviour
+    public class IPCameraToMaterial : VideoToMaterial
     {
-        [Tooltip("Renderer with the material texture for the IP camera")]
-        [SerializeField]
-        private Renderer frameRenderer;
-        [Tooltip("Image with the material texture for the IP camera")]
-        [SerializeField]
-        private Image frameImage;
-        [Tooltip("URL of the IP camera")]
         [SerializeField]
         private string url = "http://10.2.13.100:8080/video";
         [Tooltip("Optional login required to access the IP camera")]
@@ -36,9 +29,6 @@ namespace GPVUDK
         [Tooltip("Optional password required to access the IP camera")]
         [SerializeField]
         private string password = null;
-        [Tooltip("Start streaming on startup")]
-        [SerializeField]
-        private bool autoStartStreaming = false;
         [Tooltip("Restart on connection lost")]
         [SerializeField]
         private bool restartOnError = true;
@@ -52,23 +42,106 @@ namespace GPVUDK
         [SerializeField]
         private float reconnectTimeout = 1f;
 
+        private Texture2D frameTexture;
         // Internal buffer
         private Byte[] jpegData;
 
-        private Texture2D texture;
-        private int savedWidth = 0;
-        private int savedHeight = 0;
-        private int savedTexWidth = 0;
-        private int savedTexHeight = 0;
         private string thisClassName;
         private bool firstFrame = false;
         private bool restartStream = false;
-        private bool resizeFrameImage = false;
+        private bool isPaused = false;
 
         /// <summary>
         /// Flag set to true when the video streming is running.
         /// </summary>
         public bool IsStreaming { get; private set; }
+
+        public override bool Initialized
+        {
+            get
+            {
+                return frameTexture != null && frameTexture.width > 2;
+            }
+        }
+
+        public override bool Playing
+        {
+            get
+            {
+                return Initialized && IsStreaming && !isPaused;
+            }
+        }
+
+        public override bool Paused
+        {
+            get
+            {
+                return Initialized && isPaused;
+            }
+        }
+
+        protected override int FrameWidth
+        {
+            get
+            {
+                return frameTexture.width;
+            }
+        }
+
+        protected override int FrameHeight
+        {
+            get
+            {
+                return frameTexture.height;
+            }
+        }
+
+        protected override Texture FrameTexture
+        {
+            get
+            {
+                return frameTexture;
+            }
+        }
+
+        public string Url
+        {
+            get
+            {
+                return url;
+            }
+
+            set
+            {
+                SetUrl(value, login, password);
+            }
+        }
+
+        public string Login
+        {
+            get
+            {
+                return login;
+            }
+
+            set
+            {
+                SetUrl(url, value, password);
+            }
+        }
+
+        public string Password
+        {
+            get
+            {
+                return password;
+            }
+
+            set
+            {
+                SetUrl(url, login, value);
+            }
+        }
 
         /// <summary>
         /// Event triggered when on connection error.
@@ -78,6 +151,10 @@ namespace GPVUDK
         /// Event triggered when the connection succeeds.
         /// </summary>
         public event Action ConnectionSucceeded;
+        /// <summary>
+        /// Event triggered when the connection is closed.
+        /// </summary>
+        public event Action ConnectionClosed;
 
         /// <summary>
         /// Set URL and optionally login and password for the IP camera.
@@ -101,7 +178,7 @@ namespace GPVUDK
         /// <summary>
         /// Stop video streaming, if running.
         /// </summary>
-        public void StopStream()
+        protected virtual void StopStream()
         {
             if (IsStreaming)
             {
@@ -109,16 +186,12 @@ namespace GPVUDK
             }
             IsStreaming = false;
             StopCoroutine(GetVideoStream());
-            if (frameImage != null)
-            {
-                frameImage.gameObject.SetActive(false);
-            }
         }
 
         /// <summary>
         /// Start video streaming, restart if already running.
         /// </summary>
-        public void StartStream()
+        protected virtual void StartStream()
         {
             StartCoroutine(GetVideoStream());
         }
@@ -158,153 +231,6 @@ namespace GPVUDK
             }
         }
 
-        private IEnumerator GetFrames(Stream stream)
-        {
-            // TODO: this method must be reviewed
-
-#if UNITY_WSA_10_0 && WINDOWS_UWP
-#else
-            stream.ReadTimeout = (int)(readTimeout * 1000f);
-#endif
-            if (frameRenderer != null)
-            {
-                frameRenderer.material.color = Color.white;
-                frameRenderer.material.mainTexture = texture;
-            }
-            if (frameImage != null)
-            {
-                frameImage.material.color = Color.white;
-                frameImage.material.mainTexture = texture;
-                frameImage.gameObject.SetActive(true);
-            }
-            IsStreaming = true;
-            firstFrame = true;
-            float timeoutStartTime = 0;
-
-            while (IsStreaming)
-            {
-                bool frameGot = false;
-                bool streamLost = false;
-                try
-                {
-                    float elapsedTime = 0;
-                    int bytesToRead = -1;
-                    try
-                    {
-                        bytesToRead = FindLength(stream);
-                    }
-#if UNITY_WSA_10_0 && WINDOWS_UWP
-                catch (IOException)
-#else
-                    catch (WebException)
-#endif
-                    {
-                        // Error handling is made in the "if (bytesToRead == -1)" block
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                        Debug.LogError("Stream lost while reading header.");
-                        streamLost = true;
-                    }
-                    if (streamLost)
-                    {
-                        yield return OnStreamLost();
-                        yield break;
-                    }
-                    if (bytesToRead == -1)
-                    {
-                        if (timeoutStartTime == 0)
-                        {
-                            timeoutStartTime = Time.realtimeSinceStartup;
-                        }
-                        Debug.Log(thisClassName + ": waiting for frames.");
-                        //                print("End of stream");
-                        yield return null;
-                        elapsedTime += Time.realtimeSinceStartup - timeoutStartTime;
-                        if (elapsedTime < giveUpTimeout)
-                        {
-                            yield return new WaitForEndOfFrame();
-                            continue;
-                        }
-                        else
-                        {
-                            timeoutStartTime = 0;
-                            Debug.LogErrorFormat("Connection from IP camera lost after {F1} seconds.", elapsedTime);
-                            yield return OnStreamLost();
-                            yield break;
-                        }
-                    }
-                    if (jpegData.Length < bytesToRead)
-                    {
-                        // if the internal buffer is not enough double it
-                        jpegData = new byte[bytesToRead * 2];
-                    }
-
-                    int leftToRead = bytesToRead;
-
-                    while (leftToRead > 0 && IsStreaming)
-                    {
-                        //print(leftToRead);
-                        try
-                        {
-                            leftToRead -= stream.Read(
-                            jpegData, bytesToRead - leftToRead, leftToRead);
-
-                        }
-#if UNITY_WSA_10_0 && WINDOWS_UWP
-                    catch (IOException)
-#else
-                        catch (WebException)
-#endif
-                        {
-                            // Probably the operation has timed out. Retry in the next iteration.
-                        }
-                        catch (ObjectDisposedException)
-                        {
-                            streamLost = true;
-                        }
-
-                        if (streamLost)
-                        {
-                            Debug.LogError("Stream lost.");
-                            yield return OnStreamLost();
-                            yield break;
-                        }
-                        yield return null;
-                    }
-
-                    if (IsStreaming)
-                    {
-                        stream.ReadByte(); // CR after bytes
-                        stream.ReadByte(); // LF after bytes
-                                           //Debug.Log(thisClassName + ": Frame read");
-                                           //#if UNITY_WSA_10_0 && WINDOWS_UWP
-                        texture.LoadImage(jpegData);
-                        //#else
-                        //                    MemoryStream ms = new MemoryStream(jpegData, 0, bytesToRead, false, true);
-                        //                    texture.LoadImage(ms.GetBuffer());
-                        //#endif
-                        if (savedTexWidth != texture.width || savedTexHeight != texture.height)
-                        {
-                            savedTexWidth = texture.width;
-                            savedTexHeight = texture.height;
-                            resizeFrameImage = true;
-                        }
-                        frameGot = true;
-                        OnConnectionSucceeded();
-                        firstFrame = false;
-                    }
-                }
-                finally
-                {
-                    if (IsStreaming && !frameGot)
-                    {
-                        Debug.LogError("Frame missed.");
-                    }
-                }
-            }
-        }
-
         /// <summary>
         /// Get the video stream in a coroutine.
         /// </summary>
@@ -327,15 +253,15 @@ namespace GPVUDK
 #else
         private IEnumerator GetVideoStream()
         {
-            Stream stream;
-            WebResponse resp;
+            Stream responseStream;
+            WebResponse webResponse;
             restartStream = false;
             // create HTTP request
-            HttpWebRequest req = null;
+            HttpWebRequest httpWebRequest = null;
 
             try
             {
-                req = (HttpWebRequest)WebRequest.Create(url);
+                httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
             }
             catch (FormatException e)
             {
@@ -348,10 +274,10 @@ namespace GPVUDK
             {
                 if (!string.IsNullOrEmpty(login))
                 {
-                    req.Credentials = new NetworkCredential(login, password);
+                    httpWebRequest.Credentials = new NetworkCredential(login, password);
                 }
                 // get response
-                resp = req.GetResponse();
+                webResponse = httpWebRequest.GetResponse();
             }
             catch (WebException e)
             {
@@ -361,14 +287,180 @@ namespace GPVUDK
             }
 
             // get response stream
-            using (stream = resp.GetResponseStream())
+            using (responseStream = webResponse.GetResponseStream())
             {
-                yield return GetFrames(stream);
+                yield return GetFrames(responseStream);
+            }
+            webResponse.Close();
+            httpWebRequest.Abort();
+            if(ConnectionClosed!=null)
+            {
+                ConnectionClosed();
             }
             Debug.Log("Stream closed.");
             //StopStream();
         }
 #endif
+
+        private IEnumerator GetFrames(Stream stream)
+        {
+            // TODO: this method must be reviewed
+
+#if UNITY_WSA_10_0 && WINDOWS_UWP
+#else
+            stream.ReadTimeout = (int)(readTimeout * 1000f);
+#endif
+            IsStreaming = true;
+            firstFrame = true;
+            float timeoutStartTime = 0;
+
+            while (IsStreaming)
+            {
+                if (isPaused)
+                {
+                    // TODO: check if ignored frames cause a delay later when resumed
+                    yield return null;
+                    continue;
+                }
+                bool frameGot = false;
+                bool streamLost = false;
+                try
+                {
+                    float elapsedTime = 0;
+                    int bytesToRead = -1;
+                    try
+                    {
+                        bytesToRead = ReadDataLength(stream);
+                    }
+#if UNITY_WSA_10_0 && WINDOWS_UWP
+                    catch (IOException)
+#else
+                    catch (WebException)
+#endif
+                    {
+                        // Error handling is made in the "if (bytesToRead == -1)" block
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        streamLost = true;
+                    }
+                    if (streamLost)
+                    {
+                        Debug.LogError("Stream lost while reading header.");
+                        yield return OnStreamLost();
+                        yield break;
+                    }
+                    if (bytesToRead == -1)
+                    {
+                        if (timeoutStartTime == 0)
+                        {
+                            timeoutStartTime = Time.realtimeSinceStartup;
+                        }
+                        Debug.Log(thisClassName + ": waiting for frames.");
+                        //                print("End of stream");
+                        yield return null;
+                        elapsedTime += Time.realtimeSinceStartup - timeoutStartTime;
+                        if (elapsedTime < giveUpTimeout)
+                        {
+                            yield return new WaitForEndOfFrame();
+                            continue;
+                        }
+                        else
+                        {
+                            timeoutStartTime = 0;
+                            Debug.LogErrorFormat("Connection from IP camera lost after {0:F1} seconds.", elapsedTime);
+                            yield return OnStreamLost();
+                            yield break;
+                        }
+                    }
+                    if (jpegData.Length < bytesToRead)
+                    {
+                        // if the internal buffer is not enough double it
+                        jpegData = new byte[bytesToRead * 2];
+                    }
+
+                    int leftToRead = bytesToRead;
+                    bool stillReading = true;
+                    // no trailing newline, see:
+                    // https://stackoverflow.com/questions/13821263/should-newline-be-included-in-http-response-content-length
+                    //int trailToRead = 2;
+                    //byte[] trailBuf = new byte[2];
+
+                    while (stillReading && IsStreaming)
+                    {
+                        bool timeout = false;
+                        //print(leftToRead);
+                        try
+                        {
+                            if (leftToRead > 0)
+                            {
+                                leftToRead -= stream.Read(
+                                    jpegData, bytesToRead - leftToRead, leftToRead);
+                            }
+                            //else if (trailToRead > 0)
+                            //{
+                            //    trailToRead -= stream.Read(
+                            //        trailBuf, 2 - trailToRead, trailToRead);
+                            //    //stream.ReadByte(); // CR after bytes
+                            //    //stream.ReadByte(); // LF after bytes
+                            //}
+                            else
+                            {
+                                stillReading = false;
+                            }
+                        }
+#if UNITY_WSA_10_0 && WINDOWS_UWP
+                        catch (IOException)
+#else
+                        catch (WebException)
+#endif
+                        {
+                            // Probably the operation has timed out. Retry in the next iteration.
+                            timeout = true;
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            streamLost = true;
+                        }
+
+                        if (timeout)
+                        {
+                            Debug.Log("Timeout.");
+                            yield return null;
+                            continue;
+                        }
+                        if (streamLost)
+                        {
+                            Debug.LogError("Stream lost.");
+                            yield return OnStreamLost();
+                            yield break;
+                        }
+                        yield return null;
+                    }
+
+                    if (IsStreaming)
+                    {
+                        //Debug.Log(thisClassName + ": Frame read");
+                        //#if UNITY_WSA_10_0 && WINDOWS_UWP
+                        frameTexture.LoadImage(jpegData);
+                        //#else
+                        //                    MemoryStream ms = new MemoryStream(jpegData, 0, bytesToRead, false, true);
+                        //                    texture.LoadImage(ms.GetBuffer());
+                        //#endif
+                        frameGot = true;
+                        OnConnectionSucceeded();
+                        firstFrame = false;
+                    }
+                }
+                finally
+                {
+                    if (IsStreaming && !frameGot)
+                    {
+                        Debug.LogWarning("Frame missed.");
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Read the message header.
@@ -419,7 +511,7 @@ namespace GPVUDK
         private string ExtractHeaderValue(string header, string tag, int startIdx)
         {
             int tagLength = tag.Length;
-            int tagIdx = header.IndexOf(tag, startIdx);
+            int tagIdx = header.IndexOf(tag, startIdx, StringComparison.InvariantCultureIgnoreCase);
             if (tagIdx == -1)
             {
                 return null;
@@ -439,7 +531,7 @@ namespace GPVUDK
         /// </summary>
         /// <param name="stream">Source stream</param>
         /// <returns>The number of bytes to read or -1 on error.</returns>
-        private int FindLength(Stream stream)
+        private int ReadDataLength(Stream stream)
         {
             int result = -1;
             const string typeTag = "Content-Type:";
@@ -465,72 +557,59 @@ namespace GPVUDK
             return result;
         }
 
-        private void AdjustImageSize()
-        {
-            // Adjust the size of the frame output image.
-            if (texture != null)
-            {
-                Debug.LogFormat("Size: {0},{1}", texture.width, texture.height);
-                float aspect = texture.width / (float)texture.height;
-                if (frameImage != null && aspect > 0)
-                {
-                    if (aspect > 1f)
-                    {
-                        frameImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, frameImage.canvas.pixelRect.width);
-                        frameImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, frameImage.canvas.pixelRect.width / aspect);
-                    }
-                    else
-                    {
-                        frameImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, frameImage.canvas.pixelRect.height * aspect);
-                        frameImage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, frameImage.canvas.pixelRect.height);
-                    }
-                }
-                resizeFrameImage = false;
-            }
-        }
-
-
-        private void OnRectTransformDimensionsChange()
-        {
-            AdjustImageSize();
-        }
-
         private void Awake()
         {
             IsStreaming = false;
             thisClassName = GetType().Name;
-            texture = new Texture2D(2, 2);
-            jpegData = new byte[1024000];//1M
         }
 
-        private void Start()
+        protected override void Start()
         {
-            savedWidth = Screen.width;
-            savedHeight = Screen.height;
-            if (autoStartStreaming)
+            Initialize();
+            if (autoStartVideo && !string.IsNullOrEmpty(url))
             {
-                StartStream();
+                PlayVideo();
             }
         }
 
-        private void OnDisable()
-        {
-            StopStream();
-        }
-
-        private void Update()
+        protected override void Update()
         {
             if (restartStream)
             {
                 StartStream();
             }
-            if (resizeFrameImage || savedWidth != Screen.width || savedHeight != Screen.height)
-            {
-                savedWidth = Screen.width;
-                savedHeight = Screen.height;
+            base.Update();
+        }
 
-                AdjustImageSize();
-            }
+        protected override bool InitializeVideo()
+        {
+            frameTexture = new Texture2D(2, 2);
+            jpegData = new byte[106496];//1MB
+            return true;
+        }
+
+        protected override void TerminateVideo()
+        {
+            StopStream();
+            // TODO: Is this enough to free memory?
+            frameTexture = null;
+            jpegData = null;
+        }
+
+        protected override void PlayVideo()
+        {
+            isPaused = false;
+            StartStream();
+        }
+
+        protected override void PauseVideo()
+        {
+            isPaused = true;
+        }
+
+        protected override void StopVideo()
+        {
+            StopStream();
         }
     }
 }

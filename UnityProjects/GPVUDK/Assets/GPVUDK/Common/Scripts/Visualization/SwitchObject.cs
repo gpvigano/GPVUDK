@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace GPVUDK
 {
     /// <summary>
-    /// Controls the switch of game objects in sequence from a list.
+    /// Controls the switch of game objects by index or name or in sequence from a given list.
     /// </summary>
     public class SwitchObject : MonoBehaviour
     {
@@ -40,6 +40,26 @@ namespace GPVUDK
         /// The index of the currently active element in the list.
         /// </summary>
         public int CurrIndex { get { return currIndex; } }
+
+        /// <summary>
+        /// Switch to the first object with the given name.
+        /// </summary>
+        /// <param name="objectName">name of the element in the list to be switched on.</param>
+        public void Switch(string objectName)
+        {
+            if (!IsDefined)
+            {
+                return;
+            }
+            for (int i = 0; i < switchedObjects.Length; i++)
+            {
+                if (switchedObjects[i].name == objectName)
+                {
+                    Switch(i);
+                    return;
+                }
+            }
+        }
 
         /// <summary>
         /// Switch to the object with the given index.
